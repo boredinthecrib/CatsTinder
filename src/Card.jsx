@@ -96,7 +96,7 @@ function Card({ img, liked, toggleLiked }) {
   };
 
   return (
-    <div className="card">
+    <div className="catCard">
       <img src={img} alt="Cat" />
       <div className="card-content">
         <div className="card-actions">

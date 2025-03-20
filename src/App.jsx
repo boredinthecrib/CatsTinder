@@ -1,61 +1,76 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import "./App.css";
-import Card from "./Card";
+import HomePage from "./HomePage";
+import GoogleLogin from "./GoogleLogin";
+import Profile from "./Profile";
+import { ThemeProvider, useTheme } from "./ThemeContext";
+
+function AppContent() {
+  let [authenticated, setAuthenticated] = useState(false);
+  let [loading, setLoading] = useState(true);
+  const { isDarkMode, toggleTheme } = useTheme();
+
+  useEffect(() => {
+    // Check for existing session on app load
+    const storedUser = sessionStorage.getItem("user");
+    if (storedUser) {
+      setAuthenticated(true);
+    }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <Router>
+      <div className={`app-container ${isDarkMode ? "dark" : "light"}`}>
+        <button className="theme-toggle" onClick={toggleTheme}>
+          {isDarkMode ? "☀️" : "🌙"}
+        </button>
+        <Routes>
+          {/* Redirect unauthenticated users to login */}
+          <Route
+            path="/"
+            element={authenticated ? <HomePage /> : <Navigate to="/login" />}
+          />
+
+          {/* Google Login Route - Redirect authenticated users to home */}
+          <Route
+            path="/login"
+            element={
+              authenticated ? (
+                <Navigate to="/" />
+              ) : (
+                <GoogleLogin setAuthenticated={setAuthenticated} />
+              )
+            }
+          />
+
+          {/* Profile Route - Only accessible when authenticated */}
+          <Route
+            path="/profile"
+            element={authenticated ? <Profile /> : <Navigate to="/login" />}
+          />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
 
 function App() {
-	let [catList, setCatList] = useState([]);
-	let [likedCats, setLikedCats] = useState({}); // Change to an object
-
-	const toggleLiked = (index) => {
-		setLikedCats((prevLikedCats) => {
-			const updatedLikes = { ...prevLikedCats, [index]: !prevLikedCats[index] };
-			return updatedLikes;
-		});
-	};
-
-	useEffect(() => {
-		async function getCats() {
-			let API_URL = "https://api.thecatapi.com/v1/images/search?limit=10";
-			let response = await fetch(API_URL);
-			let data = await response.json();
-			setCatList(data);
-		}
-
-		getCats();
-	}, []);
-
-	return (
-		<div className="mainPage">
-			<header>Scroll and Like cats</header>
-
-			<div className="Container">
-				<div className="main">
-					{catList.map((item, index) => (
-						<Card
-							key={index}
-							img={item.url}
-							liked={likedCats[index] || false}
-							toggleLiked={() => toggleLiked(index)}
-						/>
-					))}
-				</div>
-
-				<div className="liked">
-					<h2>Liked Cats</h2>
-					{catList
-						.filter((_, index) => likedCats[index]) // Show only liked cats
-						.map((item, index) => (
-							<Card
-								key={`liked-${index}`}
-								img={item.url}
-								liked={true}
-								toggleLiked={() => toggleLiked(index)}
-							/>
-						))}
-				</div>
-			</div>
-		</div>
-	);
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
 }
 
 export default App;
